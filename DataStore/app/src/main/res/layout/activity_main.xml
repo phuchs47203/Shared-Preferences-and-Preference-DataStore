@@ -27,7 +27,7 @@
             android:id="@+id/btnSave"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lưu tên vào shared Preference"
+            android:text="Lưu tên vào Preference DataStore"
             tools:layout_editor_absoluteX="35dp"
             tools:layout_editor_absoluteY="100dp" />
 
@@ -35,7 +35,7 @@
             android:id="@+id/btnUppercase"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=" Chuyển thành in hoa và lưu tên vào shared Preference"
+            android:text=" Chuyển thành in hoa và lưu tên vào Preference DataStore"
             tools:layout_editor_absoluteX="36dp"
             tools:layout_editor_absoluteY="159dp"
             android:layout_marginBottom="40dp"
