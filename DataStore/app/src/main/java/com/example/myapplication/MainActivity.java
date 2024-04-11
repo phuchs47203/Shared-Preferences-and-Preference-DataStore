@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -12,21 +13,25 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.datastore.core.DataStore;
+import androidx.datastore.preferences.core.MutablePreferences;
 import androidx.datastore.preferences.core.Preferences;
 import androidx.datastore.preferences.core.PreferencesKeys;
 import androidx.datastore.preferences.rxjava2.RxPreferenceDataStoreBuilder;
+import androidx.datastore.rxjava2.RxDataStore;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import kotlinx.coroutines.runBlocking;
+
+import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final Preferences.Key<Set<String>> KEY_NAME =
             PreferencesKeys.stringSetKey("namesList");
-    private DataStore<Preferences> dataStore;
+    private RxDataStore<Preferences> dataStore;
     private TextView displayTextView;
     private TextView textView;
     private List<String> namesList;
@@ -47,9 +52,10 @@ public class MainActivity extends AppCompatActivity {
         Button btnUppercase = findViewById(R.id.btnUppercase);
 
 
-        dataStore = new RxPreferenceDataStoreBuilder(this, "preferences");
+        dataStore = new RxPreferenceDataStoreBuilder(getApplicationContext(), "preferences").build();
         namesList = new ArrayList<>();
-        // Lấy dữ liệu từ DataStore
+
+        // Load dữ liệu từ DataStore
         loadDataFromDataStore();
 
         btnSave.setOnClickListener(new View.OnClickListener() {
@@ -84,31 +90,58 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         displayNamesList();
-
     }
+
     private void saveDataToDataStore() {
-        // Lưu danh sách vào DataStore
         Set<String> namesSet = new HashSet<>(namesList);
-        runBlocking {
-            dataStore.edit { preferences ->
-                    preferences[KEY_NAME] = namesSet
-            }
-        }
+        dataStore.updateDataAsync(preferences -> {
+            MutablePreferences mutablePreferences = preferences.toMutablePreferences();
+            // Xóa dữ liệu hiện tại của khóa KEY_NAME
+            mutablePreferences.remove(KEY_NAME);
+            // Thêm dữ liệu mới cho khóa KEY_NAME
+            mutablePreferences.set(KEY_NAME, namesSet);
+            return Single.just(mutablePreferences);
+        }).subscribeOn(Schedulers.io()).subscribe();
     }
 
     private void loadDataFromDataStore() {
-        runBlocking {
-            val preferences = dataStore.data.first()
-            val namesSet = preferences[KEY_NAME] ?: HashSet<String>()
-            namesList.addAll(namesSet)
-        }
+        dataStore.data()
+                .map(preferences -> preferences.get(KEY_NAME))
+                .subscribeOn(Schedulers.io())
+                .subscribe(namesSet -> {
+                    if (namesSet != null) {
+                        namesList.addAll(namesSet);
+                        // Hiển thị danh sách tên sau khi dữ liệu đã được tải hoàn toàn
+                        displayNamesList();
+                    } else {
+                        // Xử lý trường hợp khi namesSet là null
+                        // Ví dụ: hiển thị thông báo hoặc thực hiện hành động khác
+                        displayTextView.setText("Data from DataStore is null");
+                    }
+                }, throwable -> {
+                    // Xử lý lỗi trong quá trình xử lý dữ liệu
+                    displayTextView.setText("Error loading data from DataStore: " + throwable.getMessage());
+                });
     }
 
+
+
     private void displayNamesList() {
+        // Kiểm tra kích thước của namesList và in ra log
+        Log.d("NamesListSize", "Size of namesList: " + namesList.size());
+        // Duyệt qua danh sách tên và in ra log từng tên
+        for (String name : namesList) {
+            Log.d("Name", "Name: " + name);
+        }
+
+        // Tạo một StringBuilder để tạo ra chuỗi hiển thị
         StringBuilder savedNames = new StringBuilder();
+        // Duyệt qua danh sách tên và thêm từng tên vào StringBuilder
         for (String name : namesList) {
             savedNames.append(name).append("\n");
         }
+        // Đặt văn bản đã tạo vào displayTextView
         displayTextView.setText(savedNames.toString());
     }
+
 }

@@ -39,10 +39,8 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
-
-// https://mvnrepository.com/artifact/androidx.datastore/datastore-preferences-rxjava2
-    implementation("androidx.datastore:datastore-preferences-rxjava2:1.0.0-rc02")
-
+    implementation("androidx.datastore:datastore-core:1.0.0")
+    implementation("io.reactivex.rxjava2:rxjava:2.2.21") // Chỉ cần nếu bạn sử dụng RxJava
+    implementation("androidx.datastore:datastore-preferences-rxjava2:1.0.0") // Chỉ cần nếu bạn sử dụng RxJava
 
 }
